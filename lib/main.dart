@@ -1,20 +1,15 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'widget/takepicture_screen.dart';
-import 'widget/filter_carousel.dart';
+import 'package:flutter_plugin/widget/takePicture_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final cameras = await availableCameras();
-  final firstCamera = cameras.first;
+  final camera = await availableCameras();
+  final firstCamera = camera.first;
+  //final secondCamera = camera.last;
 
-  runApp(
-    MaterialApp(
+  runApp(MaterialApp(
     theme: ThemeData.dark(),
-    home: TakepictureScreen(
-     camera: firstCamera,
-    ),
-    //home:PhotoFilterCarousel(),
-    debugShowCheckedModeBanner: false,
+    home: TakepictureScreen(camera: firstCamera),
   ));
 }

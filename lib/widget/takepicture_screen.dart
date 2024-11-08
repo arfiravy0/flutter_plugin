@@ -1,20 +1,17 @@
-
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_plugin/widget/filter_carousel.dart'; 
 
 class TakepictureScreen extends StatefulWidget {
-  const TakepictureScreen({
-    Key? key,
-    required this.camera,
-  }) : super(key: key);
-
   final CameraDescription camera;
 
+  const TakepictureScreen({Key? key, required this.camera}) : super(key: key);
+
   @override
-  TakepictureScreenState createState() => TakepictureScreenState();
+  _TakepictureScreenState createState() => _TakepictureScreenState();
 }
 
-class TakepictureScreenState extends State<TakepictureScreen> {
+class _TakepictureScreenState extends State<TakepictureScreen> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
 
@@ -23,7 +20,7 @@ class TakepictureScreenState extends State<TakepictureScreen> {
     super.initState();
     _controller = CameraController(
       widget.camera,
-      ResolutionPreset.medium,
+      ResolutionPreset.high,
     );
     _initializeControllerFuture = _controller.initialize();
   }
@@ -36,30 +33,17 @@ class TakepictureScreenState extends State<TakepictureScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Take a picture - NIM Anda')),
-      body: FutureBuilder(
-        future: _initializeControllerFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            return CameraPreview(_controller);
-          } else {
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          try {
-            await _initializeControllerFuture;
-            final image = await _controller.takePicture();
-            // Navigator.pop(context, image.path);
-          } catch (e) {
-            print(e);
-          }
-        },
-        child: const Icon(Icons.camera_alt),
-      ),
+    return FutureBuilder<void>(
+      future: _initializeControllerFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          return Scaffold(
+            body: PhotoFilterCarousel(cameraController: _controller),
+          );
+        } else {
+          return Center(child: CircularProgressIndicator());
+        }
+      },
     );
   }
 }

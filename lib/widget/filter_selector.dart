@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_plugin/widget/carousel_flowdelegate.dart';
+import 'package:flutter_plugin/widget/filter_item.dart';
 
-@immutable
 class FilterSelector extends StatefulWidget {
   const FilterSelector({
     super.key,
@@ -23,9 +25,7 @@ class _FilterSelectorState extends State<FilterSelector> {
 
   late final PageController _controller;
   late int _page;
-
   int get filterCount => widget.filters.length;
-
   Color itemColor(int index) => widget.filters[index % filterCount];
 
   @override
@@ -35,7 +35,8 @@ class _FilterSelectorState extends State<FilterSelector> {
     _controller = PageController(
       initialPage: _page,
       viewportFraction: _viewportFractionPerItem,
-    )..addListener(_onPageChanged);
+    );
+    _controller.addListener(_onPageChanged);
   }
 
   void _onPageChanged() {
@@ -62,59 +63,73 @@ class _FilterSelectorState extends State<FilterSelector> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final itemSize = constraints.maxWidth * _viewportFractionPerItem;
-        return Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            _buildShadowGradient(itemSize),
-            _buildCarousel(itemSize: itemSize),
-            _buildSelectionRing(itemSize),
-          ],
+    return Scrollable(
+      controller: _controller,
+      axisDirection: AxisDirection.right,
+      physics: const PageScrollPhysics(),
+      viewportBuilder: (context, viewportOffset) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final itemSize = constraints.maxWidth * _viewportFractionPerItem;
+            viewportOffset
+              ..applyViewportDimension(constraints.maxWidth)
+              ..applyContentDimensions(0.0, itemSize * (filterCount - 1));
+
+            return Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                // _buildShadowGradient(itemSize),
+                buildCarousel(
+                  viewportOffset: viewportOffset,
+                  itemSize: itemSize,
+                ),
+                _buildSelectionRing(itemSize),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildShadowGradient(double itemSize) {
-    return SizedBox(
-      height: itemSize * 2 + widget.padding.vertical,
-      child: const DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.transparent, Colors.black],
-          ),
-        ),
-        child: SizedBox.expand(),
-      ),
-    );
-  }
+  // Widget _buildShadowGradient(double itemSize) {
+  //   return SizedBox(
+  //     height: itemSize * 2 + widget.padding.vertical,
+  //     width: itemSize,
+  //     child: const DecoratedBox(
+  //       decoration: BoxDecoration(
+  //         gradient: LinearGradient(
+  //           begin: Alignment.topCenter,
+  //           end: Alignment.bottomCenter,
+  //           colors: [
+  //             Colors.transparent,
+  //             Colors.black,
+  //           ],
+  //         ),
+  //       ),
+  //       child: SizedBox.expand(),
+  //     ),
+  //   );
+  // }
 
-  Widget _buildCarousel({required double itemSize}) {
+  Widget buildCarousel({
+    required ViewportOffset viewportOffset,
+    required double itemSize,
+  }) {
     return Container(
       height: itemSize,
       margin: widget.padding,
-      child: PageView.builder(
-        controller: _controller,
-        itemCount: filterCount,
-        itemBuilder: (context, index) {
-          return Center(
-            child: GestureDetector(
-              onTap: () => _onFilterTapped(index),
-              child: Container(
-                width: itemSize * 0.8,
-                height: itemSize * 0.8,
-                decoration: BoxDecoration(
-                  color: itemColor(index),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
+      child: Flow(
+        delegate: CarouselFlowDelegate(
+          viewportOffset: viewportOffset,
+          filtersPerScreen: _filtersPerScreen,
+        ),
+        children: List.generate(filterCount, (i) {
+          return FilterItem(
+            onFilterSelected: () => _onFilterTapped(i),
+            color: itemColor(i),
           );
-        },
+        }),
       ),
     );
   }
